@@ -1,5 +1,6 @@
-import io.gatling.build.SonatypeReleasePlugin
+//import io.gatling.build.SonatypeReleasePlugin
 
+import bintray._
 import BuildSettings._
 import Bundle._
 import ConfigFiles._
@@ -10,22 +11,30 @@ import pl.project13.scala.sbt.JmhPlugin
 import sbt.Keys._
 import sbt._
 
+val fixedSettingsForBintray = Seq(
+  licenses := Seq(("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.html"))),
+  publishTo := Some("bintray-magro" at s"https://api.bintray.com/maven/magro/maven/${name.value}")
+)
+
 // Root project
 
 lazy val root = Project("gatling-parent", file("."))
-  .enablePlugins(SonatypeReleasePlugin)
+  //.enablePlugins(SonatypeReleasePlugin)
   .dependsOn(Seq(commons, core, http, jms, jdbc, redis).map(_ % "compile->compile;test->test"): _*)
   .aggregate(commons, core, jdbc, redis, httpAhc, http, jms, charts, metrics, app, recorder, testFramework, bundle, compiler)
   .settings(basicSettings: _*)
   .settings(noArtifactToPublish)
   .settings(docSettings(benchmarks, bundle): _*)
   .settings(libraryDependencies ++= docDependencies)
+  .settings(fixedSettingsForBintray: _*)
 
 // Modules
 
 def gatlingModule(id: String) = Project(id, file(id))
-  .enablePlugins(SonatypeReleasePlugin)
+  //.enablePlugins(SonatypeReleasePlugin)
   .settings(gatlingModuleSettings: _*)
+  .enablePlugins(BintrayPlugin)
+  .settings(fixedSettingsForBintray: _*)
 
 lazy val commons = gatlingModule("gatling-commons")
   .settings(libraryDependencies ++= commonsDependencies(scalaVersion.value))
@@ -94,3 +103,4 @@ lazy val bundle = gatlingModule("gatling-bundle")
   .settings(copyLogbackXml(core): _*)
   .settings(bundleSettings: _*)
   .settings(noArtifactToPublish)
+
